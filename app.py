@@ -1,6 +1,6 @@
 import json
 import google.generativeai as genai
-import wikipedia
+import wikipediaapi  # Replace wikipedia with wikipedia-api
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import logging
@@ -14,6 +14,12 @@ api_key = "AIzaSyAN23PVrXsIBkYO43JVrXa69hdbRvBqkoY"  # Replace with your actual 
 
 # Configure Gemini API
 genai.configure(api_key=api_key)
+
+# Initialize Wikipedia API
+wiki_wiki = wikipediaapi.Wikipedia(
+    language='en',  # Language of Wikipedia
+    user_agent='MyApp/1.0 (myemail@example.com)'  # User agent string
+)
 
 # Initialize conversation history
 conversation_history = []
@@ -47,16 +53,13 @@ def ask_gemini(question, history):
         logging.error(f"Error generating response: {e}")
         return None
 
-# Wikipedia Integration
+# Wikipedia Integration using wikipedia-api
 def search_wikipedia(query):
-    try:
-        return wikipedia.summary(query, sentences=2)
-    except wikipedia.exceptions.DisambiguationError as e:
-        return f"Multiple results found: {', '.join(e.options[:5])}"
-    except wikipedia.exceptions.PageError:
+    page = wiki_wiki.page(query)
+    if page.exists():
+        return page.summary  # Return the summary of the page
+    else:
         return "Sorry, I couldn't find relevant information on Wikipedia."
-    except Exception as e:
-        return f"Error: {str(e)}"
 
 def personal_data_to_string(data):
     def flatten(d, parent_key="", sep="_"):
